@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Converter UI</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+  </head>
+  <body>
+    <main class="page">
+      <header class="hero">
+        <p class="eyebrow">Convert Anything</p>
+        <h1>Format Converter</h1>
+        <p class="subtitle">
+          Upload a file, choose the desired output format and download the result.
+        </p>
+      </header>
+
+      <section class="card">
+        <form
+          class="stack"
+          hx-post="/convert"
+          hx-target="#result"
+          hx-swap="innerHTML"
+          enctype="multipart/form-data"
+        >
+          <div class="field">
+            <label for="file">Select file</label>
+            <input id="file" name="file" type="file" />
+            <p class="hint">
+              Supports images, PDFs, audio files &amp; more (pseudo UI for now).
+            </p>
+          </div>
+
+          <div class="field">
+            <label for="output">Output format</label>
+            <select id="output" name="output">
+              <option value="png">PNG</option>
+              <option value="jpg">JPG</option>
+              <option value="webp">WEBP</option>
+              <option value="pdf">PDF</option>
+              <option value="mp3">MP3</option>
+              <option value="mp4">MP4</option>
+            </select>
+          </div>
+
+          <div class="button-row">
+            <button type="submit" class="primary">Convert</button>
+            <button type="button" class="secondary" disabled>Download</button>
+          </div>
+        </form>
+
+        <div id="result" class="result">
+          <p>No conversion started yet.</p>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
