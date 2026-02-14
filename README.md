@@ -23,3 +23,25 @@ Created the requirements file with:
 ```
 pip freeze > requirements.txt
 ```
+
+---
+
+# Tech Stack
+
+**Backend**
+* Python
+* FastAPI
+
+**Frontend**
+* HTMX
+* Jinja2 Templates (kein React, kein Build-Step, einfach HTML + ein bisschen HTMX)
+
+**Conversion Engine (im Docker-Container)**
+* ImageMagick
+  → für JPG, PNG, HEIC, PDF (teilweise)
+* libheif
+  → damit ImageMagick HEIC/HEIF lesen kann
+* poppler-utils (später)
+  → für sauberes PDF → PNG/JPG (`pdftoppm`)
+* optional später: Ghostscript
+  → für PDF-Erzeugung/Optimierung

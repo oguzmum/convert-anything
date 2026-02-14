@@ -2,8 +2,10 @@
   - [ ] Image to PDF
   - [ ] PDF to Image
   - [ ] Image to Image
-    - [ ] HEIC to PNG
-    - [ ] HEIC to JPG
+    - [X] HEIC to PNG
+    - [X] HEIC to JPG
+    - [ ] PNG to JPG
+    - [ ] JPG to PNG
 
 - [ ] File Compression
 
