@@ -1,6 +1,9 @@
 - [ ] File Conversions
   - [ ] Image to PDF
   - [ ] PDF to Image
+  - [ ] Image to Image
+    - [ ] HEIC to PNG
+    - [ ] HEIC to JPG
 
 - [ ] File Compression
 
