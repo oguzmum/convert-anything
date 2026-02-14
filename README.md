@@ -15,3 +15,11 @@ Idea:
 - if the file has mutliple pages display each page and let the user choose which pages will be converted
 
 - I will also add conversion between different number systems, currencies etc just to play around and learn :D
+
+---
+
+# Requirements
+Created the requirements file with: 
+```
+pip freeze > requirements.txt
+```
