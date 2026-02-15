@@ -4,8 +4,8 @@
   - [ ] Image to Image
     - [X] HEIC to PNG
     - [X] HEIC to JPG
-    - [ ] PNG to JPG
-    - [ ] JPG to PNG
+    - [X] PNG to JPG
+    - [X] JPG to PNG
 
 - [ ] File Compression
 

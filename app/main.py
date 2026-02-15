@@ -43,9 +43,15 @@ async def convert(file: UploadFile = File(...), output: str = Form("png")) -> HT
                 media_type = "image/png"
                 label = "PNG"
 
-            elif output in ("jpg"):
-                if img.mode in ("RGBA", "P"):
-                    img = img.convert("RGB") # because jpeg cant do alpha
+            elif output == "jpg":
+                if img.mode in ("RGBA", "LA"):
+                    # JPEG has no alpha channel, so flatten onto white
+                    alpha = img.getchannel("A")
+                    base = Image.new("RGB", img.size, (255, 255, 255))
+                    base.paste(img.convert("RGB"), mask=alpha)
+                    img = base
+                elif img.mode == "P":
+                    img = img.convert("RGB")
                 img.save(out, format="JPEG", quality=85, optimize=True, progressive=True)
                 out_bytes = out.getvalue()
                 ext = "jpg"
@@ -56,7 +62,7 @@ async def convert(file: UploadFile = File(...), output: str = Form("png")) -> HT
                 return HTMLResponse("<p>Unsupported output format.</p>", status_code=400)
 
     except Exception:
-        return HTMLResponse("<p>Conversion failed. Please check the HEIC-File.</p>", status_code=400)
+        return HTMLResponse("<p>Conversion failed. Please check the uploaded file.</p>", status_code=400)
 
     token = uuid4().hex
     output_name = f"{Path(file.filename or 'converted').stem}.{ext}"
