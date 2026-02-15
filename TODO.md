@@ -1,7 +1,7 @@
-- [ ] File Conversions
-  - [ ] Image to PDF
-  - [ ] PDF to Image
-  - [ ] Image to Image
+- [X] File Conversions
+  - [X] Image to PDF
+  - [X] PDF to Image
+  - [X] Image to Image
     - [X] HEIC to PNG
     - [X] HEIC to JPG
     - [X] PNG to JPG
