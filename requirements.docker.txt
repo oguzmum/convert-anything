@@ -1,0 +1,7 @@
+fastapi==0.129.0
+Jinja2==3.1.6
+pillow==12.1.1
+pillow_heif==1.2.0
+pypdfium2==5.4.0
+python-multipart==0.0.22
+uvicorn==0.40.0

@@ -23,3 +23,15 @@ Created the requirements file with:
 ```
 pip freeze > requirements.txt
 ```
+
+## Docker (Homeserver)
+
+Build image:
+```
+docker build -t convert-anything .
+```
+
+Or use Docker Compose:
+```
+docker compose up -d --build
+```

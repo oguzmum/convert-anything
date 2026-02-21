@@ -1,0 +1,9 @@
+services:
+  convert-anything:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: convert-anything
+    ports:
+      - "9876:8000"
+    restart: unless-stopped
