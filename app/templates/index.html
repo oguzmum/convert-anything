@@ -23,6 +23,7 @@
           <select id="mode" name="mode">
             <option value="conversion">Conversion</option>
             <option value="compression">Compression</option>
+            <option value="unit">Unit Conversion</option>
           </select>
         </div>
 
@@ -80,6 +81,39 @@
           </div>
         </form>
 
+        <form
+          id="unit-form"
+          class="stack mode-panel is-hidden"
+          hx-post="/unit-convert"
+          hx-target="#result"
+          hx-swap="innerHTML"
+        >
+          <div class="field">
+            <label for="unit-category">Category</label>
+            <select id="unit-category" name="category">
+              <option value="powers_of_ten">Powers of ten</option>
+              <option value="length">Length</option>
+              <option value="time">Time</option>
+              <option value="weight">Weight</option>
+              <option value="bit_byte">Bit/Byte</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="unit-value">Value</label>
+            <input id="unit-value" name="value" type="number" step="any" value="1" required />
+          </div>
+
+          <div class="field">
+            <label for="unit-input">Input unit</label>
+            <select id="unit-input" name="unit"></select>
+          </div>
+
+          <div class="button-row">
+            <button type="submit" class="primary">Convert Unit</button>
+          </div>
+        </form>
+
         <div id="result" class="result">
           <p>No conversion started yet.</p>
         </div>
@@ -90,14 +124,85 @@
       const modeSelect = document.getElementById("mode");
       const conversionForm = document.getElementById("conversion-form");
       const compressionForm = document.getElementById("compression-form");
+      const unitForm = document.getElementById("unit-form");
+      const unitCategory = document.getElementById("unit-category");
+      const unitInput = document.getElementById("unit-input");
+
+      const unitsByCategory = {
+        powers_of_ten: [
+          { value: "a", label: "atto (a)" },
+          { value: "f", label: "femto (f)" },
+          { value: "p", label: "pico (p)" },
+          { value: "n", label: "nano (n)" },
+          { value: "u", label: "micro (u)" },
+          { value: "m", label: "milli (m)" },
+          { value: "base", label: "base (1)" },
+          { value: "k", label: "kilo (k)" },
+          { value: "M", label: "mega (M)" },
+          { value: "G", label: "giga (G)" },
+          { value: "T", label: "tera (T)" },
+          { value: "P", label: "peta (P)" },
+          { value: "E", label: "exa (E)" },
+        ],
+        length: [
+          { value: "nm", label: "nanometer (nm)" },
+          { value: "um", label: "micrometer (um)" },
+          { value: "mm", label: "millimeter (mm)" },
+          { value: "m", label: "meter (m)" },
+          { value: "km", label: "kilometer (km)" },
+        ],
+        time: [
+          { value: "ns", label: "nanosecond (ns)" },
+          { value: "us", label: "microsecond (us)" },
+          { value: "ms", label: "millisecond (ms)" },
+          { value: "s", label: "second (s)" },
+          { value: "min", label: "minute (min)" },
+          { value: "h", label: "hour (h)" },
+        ],
+        weight: [
+          { value: "ng", label: "nanogram (ng)" },
+          { value: "ug", label: "microgram (ug)" },
+          { value: "mg", label: "milligram (mg)" },
+          { value: "g", label: "gram (g)" },
+          { value: "kg", label: "kilogram (kg)" },
+          { value: "t", label: "ton (t)" },
+        ],
+        bit_byte: [
+          { value: "b", label: "bit (b)" },
+          { value: "B", label: "byte (B)" },
+          { value: "Kib", label: "kibibit (Kib)" },
+          { value: "KiB", label: "kibibyte (KiB)" },
+          { value: "Mib", label: "mebibit (Mib)" },
+          { value: "MiB", label: "mebibyte (MiB)" },
+          { value: "Gib", label: "gibibit (Gib)" },
+          { value: "GiB", label: "gibibyte (GiB)" },
+          { value: "Tib", label: "tebibit (Tib)" },
+          { value: "TiB", label: "tebibyte (TiB)" },
+        ],
+      };
 
       function syncMode() {
         const mode = modeSelect.value;
         conversionForm.classList.toggle("is-hidden", mode !== "conversion");
         compressionForm.classList.toggle("is-hidden", mode !== "compression");
+        unitForm.classList.toggle("is-hidden", mode !== "unit");
+      }
+
+      function syncUnitOptions() {
+        const category = unitCategory.value;
+        const options = unitsByCategory[category] || [];
+        unitInput.innerHTML = "";
+        options.forEach((option) => {
+          const el = document.createElement("option");
+          el.value = option.value;
+          el.textContent = option.label;
+          unitInput.appendChild(el);
+        });
       }
 
       modeSelect.addEventListener("change", syncMode);
+      unitCategory.addEventListener("change", syncUnitOptions);
+      syncUnitOptions();
       syncMode();
     </script>
   </body>

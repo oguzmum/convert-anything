@@ -30,6 +30,59 @@ SUPPORTED_COMPRESSION_CONTENT_TYPES = {
     "application/pdf",
 }
 
+UNIT_DEFINITIONS: dict[str, list[tuple[str, str, float]]] = {
+    "powers_of_ten": [
+        ("atto", "a", 1e-18),
+        ("femto", "f", 1e-15),
+        ("pico", "p", 1e-12),
+        ("nano", "n", 1e-9),
+        ("micro", "u", 1e-6),
+        ("milli", "m", 1e-3),
+        ("base", "base", 1.0),
+        ("kilo", "k", 1e3),
+        ("mega", "M", 1e6),
+        ("giga", "G", 1e9),
+        ("tera", "T", 1e12),
+        ("peta", "P", 1e15),
+        ("exa", "E", 1e18),
+    ],
+    "length": [
+        ("nanometer", "nm", 1e-9),
+        ("micrometer", "um", 1e-6),
+        ("millimeter", "mm", 1e-3),
+        ("meter", "m", 1.0),
+        ("kilometer", "km", 1e3),
+    ],
+    "time": [
+        ("nanosecond", "ns", 1e-9),
+        ("microsecond", "us", 1e-6),
+        ("millisecond", "ms", 1e-3),
+        ("second", "s", 1.0),
+        ("minute", "min", 60.0),
+        ("hour", "h", 3600.0),
+    ],
+    "weight": [
+        ("nanogram", "ng", 1e-9),
+        ("microgram", "ug", 1e-6),
+        ("milligram", "mg", 1e-3),
+        ("gram", "g", 1.0),
+        ("kilogram", "kg", 1e3),
+        ("ton", "t", 1e6),
+    ],
+    "bit_byte": [
+        ("bit", "b", 1.0),
+        ("byte", "B", 8.0),
+        ("kibibit", "Kib", 1024.0),
+        ("kibibyte", "KiB", 8.0 * 1024.0),
+        ("mebibit", "Mib", 1024.0**2),
+        ("mebibyte", "MiB", 8.0 * (1024.0**2)),
+        ("gibibit", "Gib", 1024.0**3),
+        ("gibibyte", "GiB", 8.0 * (1024.0**3)),
+        ("tebibit", "Tib", 1024.0**4),
+        ("tebibyte", "TiB", 8.0 * (1024.0**4)),
+    ],
+}
+
 
 def _as_rgb_without_alpha(img: Image.Image) -> Image.Image:
     if img.mode in ("RGBA", "LA"):
@@ -142,6 +195,15 @@ def _encode_pdf_pages(pages: list[Image.Image], quality: int) -> bytes:
         quality=quality,
     )
     return out.getvalue()
+
+
+def _format_number(value: float) -> str:
+    if value == 0:
+        return "0"
+    abs_value = abs(value)
+    if abs_value >= 1e6 or abs_value < 1e-4:
+        return f"{value:.8e}"
+    return f"{value:.8f}".rstrip("0").rstrip(".")
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -290,6 +352,53 @@ async def compress(file: UploadFile = File(...), quality: int = Form(75)) -> HTM
     return HTMLResponse(
         status
         + f'<a href="/download/{token}" download="{safe_name}">Download compressed file</a>'
+    )
+
+
+@app.post("/unit-convert", response_class=HTMLResponse)
+async def unit_convert(
+    category: str = Form(...),
+    unit: str = Form(...),
+    value: float = Form(...),
+) -> HTMLResponse:
+    category = category.lower().strip()
+    unit = unit.strip()
+
+    units = UNIT_DEFINITIONS.get(category)
+    if not units:
+        return HTMLResponse("<p>Unsupported unit category.</p>", status_code=400)
+
+    unit_map = {symbol: (name, factor) for name, symbol, factor in units}
+    selected = unit_map.get(unit)
+    if selected is None:
+        return HTMLResponse("<p>Unsupported input unit.</p>", status_code=400)
+
+    _, input_factor = selected
+    base_value = value * input_factor
+
+    rows: list[str] = []
+    for name, symbol, factor in units:
+        converted = base_value / factor
+        rows.append(
+            "<tr>"
+            f"<td>{escape(name)}</td>"
+            f"<td>{escape(symbol)}</td>"
+            f"<td>{_format_number(converted)}</td>"
+            "</tr>"
+        )
+
+    category_label = escape(category.replace("_", " ").title())
+    input_label = escape(unit)
+    input_value = _format_number(value)
+    table = (
+        "<table class='unit-table'>"
+        "<thead><tr><th>Unit</th><th>Symbol</th><th>Value</th></tr></thead>"
+        f"<tbody>{''.join(rows)}</tbody>"
+        "</table>"
+    )
+    return HTMLResponse(
+        f"<p><strong>{category_label}</strong> conversion for {input_value} {input_label}:</p>"
+        + table
     )
 
 

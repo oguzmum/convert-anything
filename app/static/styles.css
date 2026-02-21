@@ -70,6 +70,7 @@ label {
 }
 
 input[type="file"],
+input[type="number"],
 select {
   padding: 12px 14px;
   border-radius: 12px;
@@ -127,4 +128,22 @@ button:disabled {
 output {
   font-size: 0.9rem;
   color: #374151;
+}
+
+.unit-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+}
+
+.unit-table th,
+.unit-table td {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.unit-table th {
+  font-weight: 600;
+  color: #111827;
 }

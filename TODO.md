@@ -11,11 +11,11 @@
   - [X] Images
   - [X] PDF
 
-- [ ] Unit Conversion
-  - [ ] length
-  - [ ] time
-  - [ ] weigth
-  - [ ] powers of ten
-  - [ ] bit/byte
+- [X] Unit Conversion
+  - [X] length
+  - [X] time
+  - [X] weigth
+  - [X] powers of ten
+  - [X] bit/byte
 
 - [ ] Dockerfile/-image to deploy the project on my homeserver
