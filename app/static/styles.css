@@ -119,3 +119,12 @@ button:disabled {
   background: #f3f4f6;
   color: #4b5563;
 }
+
+.is-hidden {
+  display: none;
+}
+
+output {
+  font-size: 0.9rem;
+  color: #374151;
+}

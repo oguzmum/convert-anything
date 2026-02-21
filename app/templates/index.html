@@ -18,19 +18,26 @@
       </header>
 
       <section class="card">
+        <div class="field">
+          <label for="mode">Mode</label>
+          <select id="mode" name="mode">
+            <option value="conversion">Conversion</option>
+            <option value="compression">Compression</option>
+          </select>
+        </div>
+
         <form
-          class="stack"
+          id="conversion-form"
+          class="stack mode-panel"
           hx-post="/convert"
           hx-target="#result"
           hx-swap="innerHTML"
           enctype="multipart/form-data"
         >
           <div class="field">
-            <label for="file">Select file</label>
-            <input id="file" name="file" type="file" accept=".heic,.heif,.png,.jpg,.jpeg,.pdf,image/heic,image/heif,image/png,image/jpeg,application/pdf" />
-            <p class="hint">
-              Possible options: HEIC/HEIF/PNG/JPG/PDF → PNG, JPG or PDF
-            </p>
+            <label for="convert-file">Select file</label>
+            <input id="convert-file" name="file" type="file" accept=".heic,.heif,.png,.jpg,.jpeg,.pdf,image/heic,image/heif,image/png,image/jpeg,application/pdf" />
+            <p class="hint">Possible options: HEIC/HEIF/PNG/JPG/PDF → PNG, JPG or PDF</p>
           </div>
 
           <div class="field">
@@ -44,7 +51,32 @@
 
           <div class="button-row">
             <button type="submit" class="primary">Convert</button>
-            <button type="button" class="secondary" disabled>Download</button>
+          </div>
+        </form>
+
+        <form
+          id="compression-form"
+          class="stack mode-panel is-hidden"
+          hx-post="/compress"
+          hx-target="#result"
+          hx-swap="innerHTML"
+          enctype="multipart/form-data"
+        >
+          <div class="field">
+            <label for="compress-file">Select image</label>
+            <input id="compress-file" name="file" type="file" accept=".heic,.heif,.png,.jpg,.jpeg,image/heic,image/heif,image/png,image/jpeg" />
+            <p class="hint">Possible options: HEIC/HEIF/PNG/JPG → compressed image</p>
+          </div>
+
+          <div class="field">
+            <label for="quality">JPG quality (for HEIC/JPG)</label>
+            <input id="quality" name="quality" type="range" min="20" max="95" step="1" value="75" oninput="this.nextElementSibling.value = this.value" />
+            <output>75</output>
+            <p class="hint">PNG uses palette reduction + optimization. HEIC/JPG are compressed to JPG.</p>
+          </div>
+
+          <div class="button-row">
+            <button type="submit" class="primary">Compress</button>
           </div>
         </form>
 
@@ -53,5 +85,20 @@
         </div>
       </section>
     </main>
+
+    <script>
+      const modeSelect = document.getElementById("mode");
+      const conversionForm = document.getElementById("conversion-form");
+      const compressionForm = document.getElementById("compression-form");
+
+      function syncMode() {
+        const mode = modeSelect.value;
+        conversionForm.classList.toggle("is-hidden", mode !== "conversion");
+        compressionForm.classList.toggle("is-hidden", mode !== "compression");
+      }
+
+      modeSelect.addEventListener("change", syncMode);
+      syncMode();
+    </script>
   </body>
 </html>

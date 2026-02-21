@@ -21,6 +21,9 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 DOWNLOAD_CACHE: dict[str, tuple[str, bytes, str]] = {}
 
+SUPPORTED_COMPRESSION_SUFFIXES = {".heic", ".heif", ".png", ".jpg", ".jpeg"}
+SUPPORTED_COMPRESSION_CONTENT_TYPES = {"image/heic", "image/heif", "image/png", "image/jpeg"}
+
 
 def _as_rgb_without_alpha(img: Image.Image) -> Image.Image:
     if img.mode in ("RGBA", "LA"):
@@ -33,6 +36,47 @@ def _as_rgb_without_alpha(img: Image.Image) -> Image.Image:
     if img.mode != "RGB":
         return img.convert("RGB")
     return img
+
+
+def _save_png_bytes(img: Image.Image) -> bytes:
+    out = BytesIO()
+    img.save(out, format="PNG", optimize=True, compress_level=9)
+    return out.getvalue()
+
+
+def _compress_png(img: Image.Image, quality: int) -> bytes:
+    # Try multiple PNG encodings and keep the smallest result.
+    candidates: list[bytes] = []
+    candidates.append(_save_png_bytes(img))
+
+    base_colors = int(32 + ((quality - 20) / 75) * 224)
+    base_colors = max(32, min(256, base_colors))
+    palette_sizes = sorted(
+        {base_colors, max(16, base_colors // 2), max(16, base_colors // 4)},
+        reverse=True,
+    )
+
+    for colors in palette_sizes:
+        work = img
+        if work.mode not in ("RGB", "RGBA"):
+            work = work.convert("RGBA")
+
+        if "A" in work.getbands():
+            quantized = work.quantize(
+                colors=colors,
+                method=Image.Quantize.FASTOCTREE,
+                dither=Image.Dither.NONE,
+            )
+        else:
+            quantized = work.convert("RGB").quantize(
+                colors=colors,
+                method=Image.Quantize.MEDIANCUT,
+                dither=Image.Dither.NONE,
+            )
+
+        candidates.append(_save_png_bytes(quantized))
+
+    return min(candidates, key=len)
 
 
 def _encode_image(img: Image.Image, output: str) -> tuple[bytes, str, str, str]:
@@ -134,6 +178,83 @@ async def convert(file: UploadFile = File(...), output: str = Form("png")) -> HT
     return HTMLResponse(
         f"<p>Successfully converted.</p>"
         f'<a href="/download/{token}" download="{safe_name}">Download {label}</a>'
+    )
+
+
+@app.post("/compress", response_class=HTMLResponse)
+async def compress(file: UploadFile = File(...), quality: int = Form(75)) -> HTMLResponse:
+    quality = max(20, min(95, quality))
+
+    try:
+        source_name = file.filename or "compressed"
+        source_bytes = await file.read()
+        suffix = Path(source_name).suffix.lower()
+        content_type = (file.content_type or "").lower()
+
+        if (
+            suffix not in SUPPORTED_COMPRESSION_SUFFIXES
+            and content_type not in SUPPORTED_COMPRESSION_CONTENT_TYPES
+        ):
+            return HTMLResponse(
+                "<p>Unsupported file type for compression.</p>",
+                status_code=400,
+            )
+
+        with Image.open(BytesIO(source_bytes)) as img:
+            img = ImageOps.exif_transpose(img)
+
+            if suffix == ".png" or content_type == "image/png":
+                out_bytes = _compress_png(img, quality)
+                ext = "png"
+                media_type = "image/png"
+                label = "PNG"
+            else:
+                out = BytesIO()
+                img = _as_rgb_without_alpha(img)
+                img.save(
+                    out,
+                    format="JPEG",
+                    quality=quality,
+                    optimize=True,
+                    progressive=True,
+                )
+                ext = "jpg"
+                media_type = "image/jpeg"
+                label = "JPG"
+                out_bytes = out.getvalue()
+
+    except Exception:
+        return HTMLResponse(
+            "<p>Compression failed. Please check the uploaded file.</p>",
+            status_code=400,
+        )
+
+    token = uuid4().hex
+    output_name = f"{Path(source_name).stem}_compressed.{ext}"
+    DOWNLOAD_CACHE[token] = (output_name, out_bytes, media_type)
+
+    safe_name = escape(output_name)
+    original_size = len(source_bytes)
+    compressed_size = len(out_bytes)
+    savings = original_size - compressed_size
+    percent = 0.0
+    if original_size > 0:
+        percent = (savings / original_size) * 100
+
+    if savings >= 0:
+        status = (
+            f"<p>Successfully compressed ({label}). Saved {savings} bytes "
+            f"({percent:.1f}%).</p>"
+        )
+    else:
+        status = (
+            f"<p>Compression finished ({label}), but file grew by {abs(savings)} bytes "
+            f"({abs(percent):.1f}%).</p>"
+        )
+
+    return HTMLResponse(
+        status
+        + f'<a href="/download/{token}" download="{safe_name}">Download compressed file</a>'
     )
 
 

@@ -7,7 +7,9 @@
     - [X] PNG to JPG
     - [X] JPG to PNG
 
-- [ ] File Compression
+- [X] File Compression
+  - [X] Images
+  - [ ] PDF
 
 - [ ] Unit Conversion
   - [ ] length
@@ -15,3 +17,5 @@
   - [ ] weigth
   - [ ] powers of ten
   - [ ] bit/byte
+
+- [ ] Dockerfile/-image to deploy the project on my homeserver
