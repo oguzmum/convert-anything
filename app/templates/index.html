@@ -63,16 +63,16 @@
           enctype="multipart/form-data"
         >
           <div class="field">
-            <label for="compress-file">Select image</label>
-            <input id="compress-file" name="file" type="file" accept=".heic,.heif,.png,.jpg,.jpeg,image/heic,image/heif,image/png,image/jpeg" />
-            <p class="hint">Possible options: HEIC/HEIF/PNG/JPG → compressed image</p>
+            <label for="compress-file">Select file</label>
+            <input id="compress-file" name="file" type="file" accept=".heic,.heif,.png,.jpg,.jpeg,.pdf,image/heic,image/heif,image/png,image/jpeg,application/pdf" />
+            <p class="hint">Possible options: HEIC/HEIF/PNG/JPG/PDF → compressed file</p>
           </div>
 
           <div class="field">
-            <label for="quality">JPG quality (for HEIC/JPG)</label>
+            <label for="quality">Quality (JPG/PDF)</label>
             <input id="quality" name="quality" type="range" min="20" max="95" step="1" value="75" oninput="this.nextElementSibling.value = this.value" />
             <output>75</output>
-            <p class="hint">PNG uses palette reduction + optimization. HEIC/JPG are compressed to JPG.</p>
+            <p class="hint">PNG uses palette reduction + optimization. HEIC/JPG are compressed to JPG. PDF is re-encoded with lower page quality.</p>
           </div>
 
           <div class="button-row">

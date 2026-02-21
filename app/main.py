@@ -21,8 +21,14 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 DOWNLOAD_CACHE: dict[str, tuple[str, bytes, str]] = {}
 
-SUPPORTED_COMPRESSION_SUFFIXES = {".heic", ".heif", ".png", ".jpg", ".jpeg"}
-SUPPORTED_COMPRESSION_CONTENT_TYPES = {"image/heic", "image/heif", "image/png", "image/jpeg"}
+SUPPORTED_COMPRESSION_SUFFIXES = {".heic", ".heif", ".png", ".jpg", ".jpeg", ".pdf"}
+SUPPORTED_COMPRESSION_CONTENT_TYPES = {
+    "image/heic",
+    "image/heif",
+    "image/png",
+    "image/jpeg",
+    "application/pdf",
+}
 
 
 def _as_rgb_without_alpha(img: Image.Image) -> Image.Image:
@@ -102,7 +108,7 @@ def _encode_pdf(img: Image.Image) -> tuple[bytes, str, str, str]:
     return out.getvalue(), "pdf", "application/pdf", "PDF"
 
 
-def _render_pdf_pages(source_bytes: bytes) -> list[Image.Image]:
+def _render_pdf_pages(source_bytes: bytes, scale: float = 2.0) -> list[Image.Image]:
     pdf = pdfium.PdfDocument(source_bytes)
     page_count = len(pdf)
     if page_count < 1:
@@ -111,7 +117,7 @@ def _render_pdf_pages(source_bytes: bytes) -> list[Image.Image]:
     pages: list[Image.Image] = []
     for page_index in range(page_count):
         page = pdf[page_index]
-        rendered = page.render(scale=2)
+        rendered = page.render(scale=scale)
         pil_image = rendered.to_pil().convert("RGBA")
         pages.append(pil_image)
         rendered.close()
@@ -119,6 +125,23 @@ def _render_pdf_pages(source_bytes: bytes) -> list[Image.Image]:
 
     pdf.close()
     return pages
+
+
+def _encode_pdf_pages(pages: list[Image.Image], quality: int) -> bytes:
+    if not pages:
+        raise ValueError("No pages to encode.")
+
+    pdf_pages = [_as_rgb_without_alpha(page) for page in pages]
+    out = BytesIO()
+    pdf_pages[0].save(
+        out,
+        format="PDF",
+        save_all=True,
+        append_images=pdf_pages[1:],
+        optimize=True,
+        quality=quality,
+    )
+    return out.getvalue()
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -190,6 +213,7 @@ async def compress(file: UploadFile = File(...), quality: int = Form(75)) -> HTM
         source_bytes = await file.read()
         suffix = Path(source_name).suffix.lower()
         content_type = (file.content_type or "").lower()
+        is_pdf = suffix == ".pdf" or content_type == "application/pdf"
 
         if (
             suffix not in SUPPORTED_COMPRESSION_SUFFIXES
@@ -200,28 +224,39 @@ async def compress(file: UploadFile = File(...), quality: int = Form(75)) -> HTM
                 status_code=400,
             )
 
-        with Image.open(BytesIO(source_bytes)) as img:
-            img = ImageOps.exif_transpose(img)
+        if is_pdf:
+            # Lower quality uses lower raster scale and stronger PDF image compression.
+            scale = 0.9 + ((quality - 20) / 75) * 1.1
+            pages = _render_pdf_pages(source_bytes, scale=scale)
+            out_bytes = _encode_pdf_pages(pages, quality=quality)
+            ext = "pdf"
+            media_type = "application/pdf"
+            label = "PDF"
+            for page in pages:
+                page.close()
+        else:
+            with Image.open(BytesIO(source_bytes)) as img:
+                img = ImageOps.exif_transpose(img)
 
-            if suffix == ".png" or content_type == "image/png":
-                out_bytes = _compress_png(img, quality)
-                ext = "png"
-                media_type = "image/png"
-                label = "PNG"
-            else:
-                out = BytesIO()
-                img = _as_rgb_without_alpha(img)
-                img.save(
-                    out,
-                    format="JPEG",
-                    quality=quality,
-                    optimize=True,
-                    progressive=True,
-                )
-                ext = "jpg"
-                media_type = "image/jpeg"
-                label = "JPG"
-                out_bytes = out.getvalue()
+                if suffix == ".png" or content_type == "image/png":
+                    out_bytes = _compress_png(img, quality)
+                    ext = "png"
+                    media_type = "image/png"
+                    label = "PNG"
+                else:
+                    out = BytesIO()
+                    img = _as_rgb_without_alpha(img)
+                    img.save(
+                        out,
+                        format="JPEG",
+                        quality=quality,
+                        optimize=True,
+                        progressive=True,
+                    )
+                    ext = "jpg"
+                    media_type = "image/jpeg"
+                    label = "JPG"
+                    out_bytes = out.getvalue()
 
     except Exception:
         return HTMLResponse(
