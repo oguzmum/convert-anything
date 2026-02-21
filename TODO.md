@@ -9,7 +9,7 @@
 
 - [X] File Compression
   - [X] Images
-  - [ ] PDF
+  - [X] PDF
 
 - [ ] Unit Conversion
   - [ ] length
